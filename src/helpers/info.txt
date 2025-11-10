@@ -1,0 +1,5 @@
+Featured - focus helpers lives here!
+
+EXAMPLE OF USE:
+helpers / user / user-helper.ts (or; getMe-helper.ts)
+helpers / auth / auth-helper.ts (or; login-helper.ts)

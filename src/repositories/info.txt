@@ -1,0 +1,5 @@
+All db logics lives here. Manage per folder per features.
+
+EXAMPLE OF USE:
+repositories/user (type: folder)/user-repository.ts (type: files)
+repositories/auth (type: folder)/auth-repository.ts (type: files)

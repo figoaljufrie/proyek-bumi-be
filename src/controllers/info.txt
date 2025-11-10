@@ -1,0 +1,10 @@
+All https requests lives here. Manage per folder per features.
+
+Example:
+controllers/user (type: folder)/user-controllers.ts (type: files)
+controllers/auth (type: folder)/auth-controllers.ts (type: files)
+
+alternatives:
+
+controllers (type: folder)/auth.ts (type: files);
+controllers (type: folder)/user.ts (type: files);
