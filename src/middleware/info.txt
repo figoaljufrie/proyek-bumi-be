@@ -1,0 +1,8 @@
+All realiable centralized middleware.
+
+EXAMPLE OF USE:
+- cron / cron-middleware.ts
+- Auth / auth-middleware.ts
+- Auth / RBAC-middleware.ts
+- validation / validation-middleware.ts
+- log / logging-middleware.ts

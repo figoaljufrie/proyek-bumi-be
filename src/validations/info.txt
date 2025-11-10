@@ -1,0 +1,5 @@
+All realiable feature specifics validations
+
+EXAMPLE OF USE:
+validations/user (type: folder)/user-validation.ts (type: files)
+validations/auth (type: folder)/auth-validation.ts (type: files)
