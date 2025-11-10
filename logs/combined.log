@@ -2,3 +2,8 @@
 {"environment":"development","level":"info","message":"Job scheduled: streak-reset (0 0 * * *)","service":"bumi-api","timestamp":"2025-11-10T17:34:10.882Z"}
 {"environment":"development","level":"info","message":"Job scheduled: daily-reminder (0 20 * * *)","service":"bumi-api","timestamp":"2025-11-10T17:34:10.888Z"}
 {"environment":"development","level":"info","message":"All cron jobs started successfully","service":"bumi-api","timestamp":"2025-11-10T17:34:10.888Z"}
+{"environment":"development","level":"info","message":"Starting cron service...","service":"bumi-api","timestamp":"2025-11-10T18:11:36.660Z"}
+{"environment":"development","level":"info","message":"Job scheduled: streak-reset (0 0 * * *)","service":"bumi-api","timestamp":"2025-11-10T18:11:36.700Z"}
+{"environment":"development","level":"info","message":"Job scheduled: daily-reminder (0 20 * * *)","service":"bumi-api","timestamp":"2025-11-10T18:11:36.702Z"}
+{"environment":"development","level":"info","message":"All cron jobs started successfully","service":"bumi-api","timestamp":"2025-11-10T18:11:36.702Z"}
+{"environment":"development","level":"info","message":"SIGINT received, stopping services...","service":"bumi-api","timestamp":"2025-11-10T18:11:40.832Z"}
