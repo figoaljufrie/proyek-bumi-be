@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output = "../src/generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
@@ -9,7 +9,417 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model test_sync {
-  id   Int     @id @default(autoincrement())
-  name String?
+// ENUMS
+enum AuthProvider {
+  EMAIL
+  GOOGLE
+  APPLE
+}
+
+enum ActionCategory {
+  ENERGY
+  FOOD
+  WASTE
+  TRANSPORTATION
+  WATER
+  LIFESTYLE
+}
+
+enum FriendStatus {
+  PENDING
+  ACCEPTED
+  DECLINED
+}
+
+enum CustomActionStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum NotificationType {
+  DAILY_REMINDER
+  STREAK_WARNING
+  BADGE_UNLOCK
+  FRIEND_ACTIVITY
+  COMMUNITY_UPDATE
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
+enum NotificationChannel {
+  PUSH
+  EMAIL
+  IN_APP
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// MODELS - CORE ENTITIES
+
+model User {
+  id            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email         String       @unique @db.VarChar(255)
+  passwordHash  String?      @map("password_hash") @db.VarChar(255)
+  displayName   String       @map("display_name") @db.VarChar(100)
+  bio           String?      @db.Text
+  avatarUrl     String?      @map("avatar_url") @db.Text
+  totalPoints   Int          @default(0) @map("total_points")
+  currentStreak Int          @default(0) @map("current_streak")
+  longestStreak Int          @default(0) @map("longest_streak")
+  emailVerified Boolean      @default(false) @map("email_verified")
+  authProvider  AuthProvider @default(EMAIL) @map("auth_provider")
+  timezone      String       @default("UTC") @db.VarChar(50)
+  dailyGoal     Int          @default(10) @map("daily_goal")
+  lastActiveAt  DateTime     @default(now()) @map("last_active_at") @db.Timestamptz
+  role          UserRole     @default(USER)
+  deactivatedAt DateTime?    @map("deactivated_at") @db.Timestamptz
+  createdAt     DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relations
+  userImpact              UserImpact?
+  actionLogs              UserActionLog[]
+  customActions           CustomAction[]
+  badges                  UserBadge[]
+  friendshipsSent         Friendship[]             @relation("UserSent")
+  friendshipsReceived     Friendship[]             @relation("UserReceived")
+  refreshTokens           RefreshToken[]
+  emailVerificationTokens EmailVerificationToken[]
+  passwordResetTokens     PasswordResetToken[]
+  loginAttempts           LoginAttempt[]
+  notificationPreferences NotificationPreference[]
+  scheduledNotifications  ScheduledNotification[]
+  notificationHistory     NotificationHistory[]
+  userInterests           UserInterest[]
+  fileUploads             FileUpload[]
+  leaderboardSnapshots    Leaderboard[]
+
+  @@map("users")
+}
+
+model UserImpact {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         String   @unique @map("user_id") @db.Uuid
+  totalPoints    Int      @default(0) @map("total_points")
+  currentStreak  Int      @default(0) @map("current_streak")
+  longestStreak  Int      @default(0) @map("longest_streak")
+  co2Saved       Float    @default(0) @map("co2_saved")
+  waterSaved     Float    @default(0) @map("water_saved")
+  plasticAvoided Int      @default(0) @map("plastic_avoided")
+  lastUpdated    DateTime @default(now()) @map("last_updated") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_impacts")
+}
+
+model Action {
+  id          String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title       String         @db.VarChar(100)
+  description String?        @db.Text
+  category    ActionCategory
+  pointValue  Int            @map("point_value")
+  iconUrl     String?        @map("icon_url") @db.Text
+  isActive    Boolean        @default(true) @map("is_active")
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  actionLogs UserActionLog[]
+
+  @@index([category])
+  @@index([isActive])
+  @@map("actions")
+}
+
+model CustomAction {
+  id          String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String             @map("user_id") @db.Uuid
+  title       String             @db.VarChar(100)
+  description String?            @db.Text
+  category    ActionCategory
+  pointValue  Int                @map("point_value")
+  status      CustomActionStatus @default(PENDING)
+  adminNotes  String?            @map("admin_notes") @db.Text
+  createdAt   DateTime           @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime           @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, status])
+  @@map("custom_actions")
+}
+
+model UserActionLog {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String   @map("user_id") @db.Uuid
+  actionId     String   @map("action_id") @db.Uuid
+  pointsEarned Int      @map("points_earned")
+  loggedAt     DateTime @default(now()) @map("logged_at") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action Action @relation(fields: [actionId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, actionId, loggedAt], name: "unique_user_action_per_day")
+  @@index([userId, loggedAt])
+  @@index([loggedAt])
+  @@map("user_action_logs")
+}
+
+model Badge {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name        String   @db.VarChar(100)
+  description String?  @db.Text
+  requirement String   @db.Text
+  iconUrl     String?  @map("icon_url") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  userBadges UserBadge[]
+
+  @@index([name])
+  @@map("badges")
+}
+
+model UserBadge {
+  id       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId   String   @map("user_id") @db.Uuid
+  badgeId  String   @map("badge_id") @db.Uuid
+  earnedAt DateTime @default(now()) @map("earned_at") @db.Timestamptz
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+// MODELS - SOCIAL FEATURES
+model Friendship {
+  id        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  friendId  String       @map("friend_id") @db.Uuid
+  status    FriendStatus @default(PENDING)
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  user   User @relation("UserSent", fields: [userId], references: [id], onDelete: Cascade)
+  friend User @relation("UserReceived", fields: [friendId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, friendId])
+  @@index([userId, status])
+  @@index([friendId, status])
+  @@map("friendships")
+}
+
+// MODELS - SECURITY & AUTH
+model RefreshToken {
+  id        String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  token     String    @unique @db.Text
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("refresh_tokens")
+}
+
+model EmailVerificationToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  token     String   @unique @db.Text
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("email_verification_tokens")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String   @unique @map("user_id") @db.Uuid
+  token     String   @unique @db.Text
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model LoginAttempt {
+  id          String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  ipAddress   String?   @map("ip_address") @db.VarChar(45)
+  userAgent   String?   @map("user_agent") @db.Text
+  success     Boolean
+  attemptedAt DateTime  @default(now()) @map("attempted_at") @db.Timestamptz
+  lockedUntil DateTime? @map("locked_until") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, attemptedAt])
+  @@map("login_attempts")
+}
+
+// MODELS - NOTIFICATION SYSTEM
+model NotificationPreference {
+  id            String                @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        String                @map("user_id") @db.Uuid
+  type          NotificationType
+  enabled       Boolean               @default(true)
+  channel       NotificationChannel[] @default([PUSH])
+  scheduledTime DateTime?             @map("scheduled_time") @db.Timestamptz
+  createdAt     DateTime              @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime              @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, type])
+  @@index([userId])
+  @@map("notification_preferences")
+}
+
+model ScheduledNotification {
+  id        String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(255)
+  body      String           @db.Text
+  data      Json?            @db.Json
+  sendAt    DateTime         @map("send_at") @db.Timestamptz
+  status    String           @default("pending") @db.VarChar(20)
+  attempts  Int              @default(0)
+  sentAt    DateTime?        @map("sent_at") @db.Timestamptz
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sendAt, status])
+  @@index([userId])
+  @@map("scheduled_notifications")
+}
+
+model NotificationHistory {
+  id          String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String              @map("user_id") @db.Uuid
+  type        NotificationType
+  title       String              @db.VarChar(255)
+  body        String              @db.Text
+  data        Json?               @db.Json
+  channel     NotificationChannel
+  deliveredAt DateTime            @default(now()) @map("delivered_at") @db.Timestamptz
+  readAt      DateTime?           @map("read_at") @db.Timestamptz
+  createdAt   DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, deliveredAt])
+  @@index([readAt])
+  @@map("notification_history")
+}
+
+// MODELS - COMMUNITY & GLOBAL STATS
+model CommunityGoal {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title        String   @db.VarChar(255)
+  description  String?  @db.Text
+  targetValue  Float    @map("target_value")
+  currentValue Float    @default(0) @map("current_value")
+  type         String   @db.VarChar(50)
+  startDate    DateTime @map("start_date") @db.Timestamptz
+  endDate      DateTime @map("end_date") @db.Timestamptz
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([startDate, endDate])
+  @@index([isActive])
+  @@map("community_goals")
+}
+
+model Leaderboard {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  leaderboardType String   @map("leaderboard_type") @db.VarChar(20)
+  periodStart     DateTime @map("period_start") @db.Date
+  periodEnd       DateTime @map("period_end") @db.Date
+  rank            Int
+  totalPoints     Int      @map("total_points")
+  updatedAt       DateTime @default(now()) @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, leaderboardType, periodStart, periodEnd], name: "unique_user_leaderboard_period")
+  @@index([leaderboardType, periodStart, periodEnd], name: "idx_leaderboard_type_period")
+  @@index([rank], name: "idx_leaderboard_rank")
+  @@index([userId], name: "idx_leaderboard_user")
+  @@map("leaderboards")
+}
+
+// MODELS - SUPPORTING & UTILITY
+model UserInterest {
+  id        String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String         @map("user_id") @db.Uuid
+  category  ActionCategory
+  createdAt DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, category])
+  @@index([userId])
+  @@map("user_interests")
+}
+
+model FileUpload {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    String?  @map("user_id") @db.Uuid
+  fileType  String   @map("file_type") @db.VarChar(50)
+  fileUrl   String   @map("file_url") @db.Text
+  fileSize  Int?     @map("file_size")
+  mimeType  String?  @map("mime_type") @db.VarChar(100)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([fileType])
+  @@map("file_uploads")
+}
+
+model NotificationTemplate {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name          String   @unique @db.VarChar(100)
+  titleTemplate String   @map("title_template") @db.VarChar(255)
+  bodyTemplate  String   @map("body_template") @db.Text
+  dataSchema    Json?    @map("data_schema") @db.Json
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("notification_templates")
+}
+
+model MaterializedViewRefreshLog {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  viewName          String   @map("view_name") @db.VarChar(100)
+  lastRefreshedAt   DateTime @map("last_refreshed_at") @db.Timestamptz
+  refreshDurationMs Int      @map("refresh_duration_ms")
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@unique([viewName])
+  @@map("materialized_view_refresh_logs")
 }
