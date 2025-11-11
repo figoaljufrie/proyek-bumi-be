@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { $Enums } from "../../generated/prisma";
-import { errorResponse } from "../../utils/response-handler";
+import { errorResponse } from "../../utils/response/response-handler";
 import { JwtUserPayload } from "./jwt-middleware";
 
 export class RBACMiddleware {
