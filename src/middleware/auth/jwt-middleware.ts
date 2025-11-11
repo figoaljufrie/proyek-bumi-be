@@ -1,7 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { JwtPayload, verify } from "jsonwebtoken";
 import { $Enums } from "../../generated/prisma";
-import { errorResponse } from "../../utils/response-handler";
+import { errorResponse } from "../../utils/response/response-handler";
 
 export interface JwtUserPayload extends JwtPayload {
   id: string;
