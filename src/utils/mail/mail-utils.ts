@@ -32,7 +32,7 @@ export class MailUtility {
       await Promise.race([
         sgMail.send(msg),
         new Promise((_resolve, reject) =>
-          setTimeout(() => reject(new Error("Email send timeout")))
+          setTimeout(() => reject(new Error("Email send timeout")), 100000)
         ),
       ]);
       console.log("Email successfully sent to", to);

@@ -1,4 +1,4 @@
-// dtos/auth/auth-dto.ts
+// src/dtos/auth/auth-dto.ts
 export interface RegisterDTO {
   email: string;
   displayName?: string;
@@ -6,7 +6,6 @@ export interface RegisterDTO {
 
 export interface LoginDTO {
   email: string;
-  displayName: string;
   password: string;
 }
 
@@ -34,4 +33,15 @@ export interface RecordLoginAttemptDTO {
   ipAddress?: string;
   userAgent?: string;
   lockedUntil?: Date;
+}
+
+export interface VerifyEmailDTO {
+  userId: string;
+  token: string;
+  password: string;
+}
+
+export interface ResetPasswordDTO {
+  token: string;
+  newPassword: string;
 }

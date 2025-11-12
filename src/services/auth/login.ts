@@ -1,11 +1,10 @@
-// src/services/auth/login-service.ts
+import crypto from "crypto";
+import jwt, { Secret, SignOptions } from "jsonwebtoken";
 import { LoginDTO } from "../../dtos/auth/auth-dto";
 import { AuthCrud } from "../../repositories/auth/crud";
 import { LoginAttempt } from "../../repositories/auth/login-attempt";
 import { RefreshToken } from "../../repositories/auth/refresh-token";
 import { comparePassword } from "../../utils/bcrypt/bcrypt-utils";
-import jwt, { SignOptions, Secret } from "jsonwebtoken";
-import crypto from "crypto";
 
 export class LoginService {
   private authCrud = new AuthCrud();

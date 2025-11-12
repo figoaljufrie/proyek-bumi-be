@@ -1,13 +1,10 @@
-import crypto from "crypto";
 import { RegisterDTO } from "../../dtos/auth/auth-dto";
 import { AuthCrud } from "../../repositories/auth/crud";
-import { EmailVerificationToken } from "../../repositories/auth/email-token";
-import { MailUtility } from "../../utils/mail/mail-utils";
+import { SendEmailService } from "./send-email";
 
 export class RegisterService {
   private auth = new AuthCrud();
-  private emailToken = new EmailVerificationToken();
-  private mailer = new MailUtility();
+  private sendEmail = new SendEmailService();
 
   public async register(data: RegisterDTO) {
     const existingUser = await this.auth.findByEmail(data.email);
@@ -15,24 +12,14 @@ export class RegisterService {
 
     const user = await this.auth.register(data);
 
-    const token = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
-    await this.emailToken.createToken({
-      userId: user.id,
-      token,
-      expiresAt,
-    });
-
-    await this.mailer.sendEmail(
-      user.email,
-      "Verify your email",
-      "verify-email",
-      { displayName: user.displayName, token }
+    const { message } = await this.sendEmail.sendVerificationEmail(
+      user.id,
+      user.email
     );
 
     return {
       userId: user.id,
-      message: "Registration successful. Please verify your email.",
+      message: message ?? "Registration successful. Please verify your email.",
     };
   }
 }

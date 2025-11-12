@@ -88,7 +88,7 @@ export class AuthCrud {
   public async reactivate(userId: string) {
     return prisma.user.update({
       where: { id: userId },
-      data: { deactivatedAt: null },
+      data: { deactivatedAt: null, deletedAt: null },
     });
   }
 
