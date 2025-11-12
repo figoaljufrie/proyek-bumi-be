@@ -1,6 +1,5 @@
-// src/services/auth/refresh-access-token-service.ts
-import { RefreshToken } from "../../repositories/auth/refresh-token";
 import jwt, { Secret, SignOptions } from "jsonwebtoken";
+import { RefreshToken } from "../../repositories/auth/refresh-token";
 
 export class RefreshAccessTokenService {
   private refreshTokenRepo = new RefreshToken();
@@ -17,20 +16,16 @@ export class RefreshAccessTokenService {
     if (!user || user.deletedAt || user.deactivatedAt)
       throw new Error("User not active");
 
-    const secret: Secret = this.JWT_SECRET; 
+    const secret: Secret = this.JWT_SECRET;
     const accessToken = jwt.sign(
       { id: user.id, email: user.email, role: user.role },
       secret,
       { expiresIn: this.JWT_EXPIRES_IN } as SignOptions
     );
 
-    // 4️⃣ Return new access token
     return { accessToken };
   }
 
-  /**
-   * Revoke a refresh token (logout)
-   */
   public async revokeRefreshToken(refreshToken: string) {
     await this.refreshTokenRepo.revokeToken(refreshToken);
     return { message: "Refresh token revoked successfully" };
