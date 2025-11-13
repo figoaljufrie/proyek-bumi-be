@@ -27,14 +27,17 @@ export class PasswordResetController {
         newPassword
       );
 
-      return successResponse(res, "Password reset successfully", result, 200);
-    } catch (err) {
-      return errorResponse(
+      return successResponse(
         res,
-        "Failed to reset password",
-        400,
-        (err as Error).message
+        "Password reset successfully",
+        {
+          input: { token, newPassword },
+          result,
+        },
+        200
       );
+    } catch (err) {
+      return errorResponse(res, "Failed to reset password", 400, err);
     }
   };
 }

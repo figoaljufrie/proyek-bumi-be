@@ -11,14 +11,20 @@ export class RegisterController {
   public register = async (req: Request, res: Response) => {
     try {
       const result = await this.registerService.register(req.body);
-      return successResponse(res, "User registered successfully", result, 201);
-    } catch (err) {
-      return errorResponse(
+
+      const { email } = req.body;
+
+      return successResponse(
         res,
-        "Failed to register user",
-        400,
-        (err as Error).message
+        "User registered successfully",
+        {
+          input: { email },
+          result,
+        },
+        201
       );
+    } catch (err) {
+      return errorResponse(res, "Failed to register user", 400, err);
     }
   };
 }
