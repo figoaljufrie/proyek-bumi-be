@@ -10,7 +10,6 @@ export class EmailVerificationController {
 
   public verifyEmailAndSetPassword = async (req: Request, res: Response) => {
     try {
-      // Token comes from query params (from email link)
       const token = req.query.token as string;
       const { password } = req.body;
 
@@ -37,10 +36,14 @@ export class EmailVerificationController {
         password
       );
 
+      // Only return relevant input fields
       return successResponse(
         res,
         "Email verified and password set successfully",
-        result,
+        {
+          input: { token },
+          result,
+        },
         200
       );
     } catch (err) {
@@ -48,7 +51,7 @@ export class EmailVerificationController {
         res,
         "Failed to verify email and set password",
         400,
-        (err as Error).message
+        err
       );
     }
   };

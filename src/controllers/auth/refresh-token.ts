@@ -16,7 +16,10 @@ export class RefreshTokenController {
       return successResponse(
         res,
         "Access token refreshed successfully",
-        result,
+        {
+          input: { refreshToken },
+          result,
+        },
         200
       );
     } catch (err) {
@@ -37,7 +40,10 @@ export class RefreshTokenController {
       return successResponse(
         res,
         "Refresh token revoked successfully",
-        result,
+        {
+          input: { refreshToken },
+          result,
+        },
         200
       );
     } catch (err) {

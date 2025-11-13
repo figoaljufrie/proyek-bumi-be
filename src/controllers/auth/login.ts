@@ -18,14 +18,26 @@ export class LoginController {
         ipAddress,
         userAgent
       );
-      return successResponse(res, "Login successful", result, 200);
-    } catch (err) {
-      return errorResponse(
+
+      const { email } = req.body;
+
+      return successResponse(
         res,
-        "Failed to login user",
-        400,
-        (err as Error).message
+        "Login successful",
+        {
+          input: { email },
+          result: {
+            userId: result.userId,
+            email: result.email,
+            role: result.role,
+            accessToken: result.accessToken,
+            refreshToken: result.refreshToken,
+          },
+        },
+        200
       );
+    } catch (err) {
+      return errorResponse(res, "Failed to login user", 400, err);
     }
   };
 }
